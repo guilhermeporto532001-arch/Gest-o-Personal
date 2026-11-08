@@ -1,0 +1,72 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default-deny all documents
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidClient(data, userId) {
+      return data.userId == userId &&
+        data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+        data.timesPerWeek is number && data.timesPerWeek >= 0 && data.timesPerWeek <= 50 &&
+        data.birthDate is string && data.birthDate.size() <= 10 &&
+        data.pricePerClass is number && data.pricePerClass >= 0 &&
+        (!('whatsapp' in data) || (data.whatsapp is string && data.whatsapp.size() <= 20));
+    }
+
+    function isValidClassRecord(data, userId) {
+      return data.userId == userId &&
+        data.clientId is string && data.clientId.size() <= 128 &&
+        data.date is string && data.date.size() <= 10 &&
+        data.monthKey is string && data.monthKey.size() <= 10;
+    }
+
+    function isValidMonthlyPayment(data, userId) {
+      return data.userId == userId &&
+        data.clientId is string && data.clientId.size() <= 128 &&
+        data.monthKey is string && data.monthKey.size() <= 10 &&
+        data.status is string && (data.status == 'pendente' || data.status == 'pago');
+    }
+
+    match /users/{userId} {
+      allow get, write: if isOwner(userId);
+
+      match /clients/{clientId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(clientId) && isValidClient(request.resource.data, userId);
+        allow update: if isOwner(userId) && isValidId(clientId) && isValidClient(request.resource.data, userId) &&
+                         request.resource.data.userId == resource.data.userId;
+        allow delete: if isOwner(userId) && isValidId(clientId);
+      }
+
+      match /classes/{classId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(classId) && isValidClassRecord(request.resource.data, userId);
+        allow update: if isOwner(userId) && isValidId(classId) && isValidClassRecord(request.resource.data, userId) &&
+                         request.resource.data.userId == resource.data.userId;
+        allow delete: if isOwner(userId) && isValidId(classId);
+      }
+
+      match /monthly_payments/{paymentId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(paymentId) && isValidMonthlyPayment(request.resource.data, userId);
+        allow update: if isOwner(userId) && isValidId(paymentId) && isValidMonthlyPayment(request.resource.data, userId) &&
+                         request.resource.data.userId == resource.data.userId;
+        allow delete: if isOwner(userId) && isValidId(paymentId);
+      }
+    }
+  }
+}

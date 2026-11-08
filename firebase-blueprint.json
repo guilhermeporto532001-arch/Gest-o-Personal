@@ -1,0 +1,63 @@
+{
+  "entities": {
+    "Client": {
+      "title": "Client",
+      "description": "A student or client managed by the professional",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "name": { "type": "string", "maxLength": 100 },
+        "timesPerWeek": { "type": "number" },
+        "birthDate": { "type": "string", "maxLength": 10 },
+        "pricePerClass": { "type": "number" },
+        "whatsapp": { "type": "string", "maxLength": 20 },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["userId", "name", "timesPerWeek", "birthDate", "pricePerClass"]
+    },
+    "ClassRecord": {
+      "title": "ClassRecord",
+      "description": "Record of a class/training session completed with a client",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "clientId": { "type": "string" },
+        "date": { "type": "string", "maxLength": 10 },
+        "monthKey": { "type": "string", "maxLength": 7 },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["userId", "clientId", "date", "monthKey"]
+    },
+    "MonthlyPayment": {
+      "title": "MonthlyPayment",
+      "description": "Payment status for a client in a specific month",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "clientId": { "type": "string" },
+        "monthKey": { "type": "string", "maxLength": 7 },
+        "status": { "type": "string", "enum": ["pendente", "pago"] },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["userId", "clientId", "monthKey", "status"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/clients/{clientId}": {
+      "schema": "Client",
+      "description": "Clients belonging to a user"
+    },
+    "/users/{userId}/classes/{classId}": {
+      "schema": "ClassRecord",
+      "description": "Class session logs for a user"
+    },
+    "/users/{userId}/monthly_payments/{paymentId}": {
+      "schema": "MonthlyPayment",
+      "description": "Monthly payment status for a client"
+    }
+  }
+}

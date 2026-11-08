@@ -1,0 +1,6 @@
+{
+  "name": "Treinos & Aulas - Gestão Simples",
+  "description": "Aplicativo simples para controle de aulas, alunos e financeiro mensal.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
