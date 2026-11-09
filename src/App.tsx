@@ -21,12 +21,13 @@ import {
   getDocs,
 } from 'firebase/firestore';
 import { auth, db, logoutUser, handleFirestoreError, OperationType } from './firebase';
-import { Client, ClassRecord, MonthlyPayment, TabType } from './types';
+import { Client, ClassRecord, MonthlyPayment, TabType, Workout } from './types';
 import { getCurrentMonthKey } from './utils/formatters';
 import { Header } from './components/Header';
 import { BottomNav } from './components/BottomNav';
 import { ClientsTab } from './components/ClientsTab';
 import { ClassesTab } from './components/ClassesTab';
+import { WorkoutsTab } from './components/WorkoutsTab';
 import { FinanceTab } from './components/FinanceTab';
 import { AuthScreen } from './components/AuthScreen';
 import { Loader2 } from 'lucide-react';
@@ -45,6 +46,7 @@ export default function App() {
   const [clients, setClients] = useState<Client[]>([]);
   const [classes, setClasses] = useState<ClassRecord[]>([]);
   const [payments, setPayments] = useState<MonthlyPayment[]>([]);
+  const [workouts, setWorkouts] = useState<Workout[]>([]);
 
   // Feedback notifications
   const [notification, setNotification] = useState<{
@@ -74,6 +76,7 @@ export default function App() {
       setClients([]);
       setClasses([]);
       setPayments([]);
+      setWorkouts([]);
       return;
     }
 
@@ -136,10 +139,30 @@ export default function App() {
       }
     );
 
+    // 4. Workouts subscription
+    const workoutsPath = `users/${userId}/workouts`;
+    const unsubWorkouts = onSnapshot(
+      collection(db, 'users', userId, 'workouts'),
+      (snapshot) => {
+        const list: Workout[] = [];
+        snapshot.forEach((docSnap) => {
+          list.push({
+            id: docSnap.id,
+            ...(docSnap.data() as Omit<Workout, 'id'>),
+          });
+        });
+        setWorkouts(list);
+      },
+      (error) => {
+        handleFirestoreError(error, OperationType.LIST, workoutsPath);
+      }
+    );
+
     return () => {
       unsubClients();
       unsubClasses();
       unsubPayments();
+      unsubWorkouts();
     };
   }, [user]);
 
@@ -243,6 +266,60 @@ export default function App() {
     }
   };
 
+  // Workout handlers
+  const handleSaveWorkout = async (
+    workoutData: Omit<Workout, 'id' | 'userId'>,
+    existingId?: string
+  ) => {
+    if (!user) return;
+    const userId = user.uid;
+
+    try {
+      if (existingId) {
+        const workoutDocPath = `users/${userId}/workouts/${existingId}`;
+        try {
+          await updateDoc(doc(db, 'users', userId, 'workouts', existingId), {
+            ...workoutData,
+            userId,
+            updatedAt: new Date().toISOString(),
+          });
+          showNotification('Treino atualizado com sucesso!');
+        } catch (err) {
+          handleFirestoreError(err, OperationType.UPDATE, workoutDocPath);
+        }
+      } else {
+        const workoutsPath = `users/${userId}/workouts`;
+        try {
+          await addDoc(collection(db, 'users', userId, 'workouts'), {
+            ...workoutData,
+            userId,
+            createdAt: new Date().toISOString(),
+          });
+          showNotification('Treino criado com sucesso!');
+        } catch (err) {
+          handleFirestoreError(err, OperationType.CREATE, workoutsPath);
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      showNotification('Erro ao salvar treino.', 'error');
+      throw err;
+    }
+  };
+
+  const handleDeleteWorkout = async (workoutId: string) => {
+    if (!user) return;
+    const userId = user.uid;
+    const workoutDocPath = `users/${userId}/workouts/${workoutId}`;
+
+    try {
+      await deleteDoc(doc(db, 'users', userId, 'workouts', workoutId));
+      showNotification('Treino excluído com sucesso.');
+    } catch (err) {
+      handleFirestoreError(err, OperationType.DELETE, workoutDocPath);
+    }
+  };
+
   // Payment status toggle
   const handleTogglePaymentStatus = async (
     clientId: string,
@@ -339,7 +416,17 @@ export default function App() {
           />
         )}
 
-        {/* Tab 3: Financeiro */}
+        {/* Tab 3: Treinos (Fichas & Rotinas) */}
+        {activeTab === 'treinos' && (
+          <WorkoutsTab
+            clients={clients}
+            workouts={workouts}
+            onSaveWorkout={handleSaveWorkout}
+            onDeleteWorkout={handleDeleteWorkout}
+          />
+        )}
+
+        {/* Tab 4: Financeiro */}
         {activeTab === 'financeiro' && (
           <FinanceTab
             clients={clients}

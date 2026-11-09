@@ -44,6 +44,21 @@
         "updatedAt": { "type": "string" }
       },
       "required": ["userId", "clientId", "monthKey", "status"]
+    },
+    "Workout": {
+      "title": "Workout",
+      "description": "Workout routine created for clients",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "clientId": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 100 },
+        "description": { "type": "string", "maxLength": 500 },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["userId", "title"]
     }
   },
   "firestore": {
@@ -58,6 +73,10 @@
     "/users/{userId}/monthly_payments/{paymentId}": {
       "schema": "MonthlyPayment",
       "description": "Monthly payment status for a client"
+    },
+    "/users/{userId}/workouts/{workoutId}": {
+      "schema": "Workout",
+      "description": "Workout plans for clients"
     }
   }
 }

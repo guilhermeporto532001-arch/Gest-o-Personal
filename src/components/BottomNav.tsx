@@ -1,5 +1,5 @@
 import React from 'react';
-import { Users, CalendarCheck, DollarSign } from 'lucide-react';
+import { Users, CalendarCheck, Dumbbell, DollarSign } from 'lucide-react';
 import { TabType } from '../types';
 
 interface BottomNavProps {
@@ -16,8 +16,13 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onChangeTab }) 
     },
     {
       id: 'aulas' as TabType,
-      label: 'Aulas do Mês',
+      label: 'Aulas',
       icon: CalendarCheck,
+    },
+    {
+      id: 'treinos' as TabType,
+      label: 'Treinos',
+      icon: Dumbbell,
     },
     {
       id: 'financeiro' as TabType,

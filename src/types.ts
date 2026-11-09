@@ -28,4 +28,16 @@ export interface MonthlyPayment {
   updatedAt?: string;
 }
 
-export type TabType = 'clientes' | 'aulas' | 'financeiro';
+export interface Workout {
+  id: string;
+  userId: string;
+  clientId?: string;
+  clientName?: string;
+  title: string;
+  description?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export type TabType = 'clientes' | 'aulas' | 'treinos' | 'financeiro';
+

@@ -41,6 +41,13 @@ service cloud.firestore {
         data.status is string && (data.status == 'pendente' || data.status == 'pago');
     }
 
+    function isValidWorkout(data, userId) {
+      return data.userId == userId &&
+        data.title is string && data.title.size() > 0 && data.title.size() <= 100 &&
+        (!('clientId' in data) || (data.clientId is string && data.clientId.size() <= 128)) &&
+        (!('description' in data) || (data.description is string && data.description.size() <= 500));
+    }
+
     match /users/{userId} {
       allow get, write: if isOwner(userId);
 
@@ -66,6 +73,14 @@ service cloud.firestore {
         allow update: if isOwner(userId) && isValidId(paymentId) && isValidMonthlyPayment(request.resource.data, userId) &&
                          request.resource.data.userId == resource.data.userId;
         allow delete: if isOwner(userId) && isValidId(paymentId);
+      }
+
+      match /workouts/{workoutId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(workoutId) && isValidWorkout(request.resource.data, userId);
+        allow update: if isOwner(userId) && isValidId(workoutId) && isValidWorkout(request.resource.data, userId) &&
+                         request.resource.data.userId == resource.data.userId;
+        allow delete: if isOwner(userId) && isValidId(workoutId);
       }
     }
   }
